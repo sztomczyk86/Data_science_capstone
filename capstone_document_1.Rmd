@@ -1,0 +1,223 @@
+---
+title: "Data Science Capstone - Next word prediction model"
+author: "Szymon Tomczyk"
+date: "July 2021"
+output:
+  html_document
+   
+---
+```{r include=FALSE}
+library(tidyverse)
+library(cld2) # detect language
+library(quanteda)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(wordcloud)
+```
+## 1. Executive summary
+This is the first part of the Capstone Project of the Data Science Specialization 
+offered by the Johns Hopkins University. This project aims to build an algorithm
+that will predict the next word in a text input by the user and present it in a 
+form of a Shiny App. In this first part I will describe the acquisition, cleaning 
+and exploratory analysis of the data that will be used to build the prediction 
+algorithm. Moreover, I will present a brief outline of the methods that will be 
+used to do the next word prediction 
+
+## 2. The project
+The presented analysis will require the use of following R libraries:
+
+* [tidyverse](https://www.tidyverse.org/)
+* [cld2](https://cran.r-project.org/web/packages/cld2/index.html)
+* [quanteda](https://quanteda.io/)
+
+### 2.1 Downloading and loading the data into R
+The corpora provided for this task comes from three sources: Twitter, blogs and 
+news. The texts were provided in four different langues, for this project the 
+texts in English will be further used.
+
+#### The data is loaded into R
+```{r message=FALSE, warning=FALSE,cache=TRUE, comment=NA}
+blog <- file("Coursera-SwiftKey/final/en_US/en_US.blogs.txt")
+blog.txt <- readLines(blog)
+
+news <- file("Coursera-SwiftKey/final/en_US/en_US.news.txt")
+news.txt <- readLines(news)
+
+twitter <- file("Coursera-SwiftKey/final/en_US/en_US.twitter.txt")
+twitter.txt <- readLines(twitter)
+
+
+```
+### 2.2 Data cleaning
+#### Examination of the basic properties of the provided corpora
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+data.frame(source=c("Blog","News", "Twitter"),
+       `Number of texts`=c(length(blog.txt),length(news.txt), length(twitter.txt)),
+       `Total number of words`=c(sum(sapply(tokens(blog.txt),length)),
+                                 sum(sapply(tokens(news.txt),length)),
+                                 sum(sapply(tokens(twitter.txt),length))))
+
+```
+As we can see from the presented table the corpora provided for the task are 
+quite large. They contain millions of words! For the sake of computation time we 
+will use only 5% of each corpora to build a model and another 2% to evaluate the 
+model. For this purpose we will randomly sample each of the corpora and store 
+the sub-sample in a new object.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/20))
+blog.txt.sub <- blog.txt[sample.blog]
+
+sample.news <- sample(1:length(news.txt),round(length(news.txt)/20))
+news.txt.sub <- news.txt[sample.news]
+
+sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/20))
+twitter.txt.sub <- twitter.txt[sample.twitter]
+```
+#### Cleaning the corpora and tokenization
+Now that we reduced the size of the data we can start the pre-processing of the 
+texts. For this purpose we will use cld2 package that will evaluate the language 
+of each text and allow us to keep only the texts in English.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+lng1 <- detect_language(blog.txt.sub) 
+lng2 <- detect_language(news.txt.sub) 
+lng3 <- detect_language(twitter.txt.sub)
+
+data.frame(source=c("Blog","News", "Twitter"),
+       `Number of Non-English texts` = c(sum(lng1 != "en", na.rm = T),
+                                         sum(lng2 != "en", na.rm = T),
+                                         sum(lng3 != "en", na.rm = T)))
+```
+As we can see even though the corpora were pre-filtered for texts in 
+foreign languages there are still some left to be removed.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+blog.txt.sub <- blog.txt.sub[lng1 =="en"]
+news.txt.sub <- news.txt.sub[lng2 =="en"]
+twitter.txt.sub <- twitter.txt.sub[lng3 =="en"]
+```
+In the next step we will combine the texts from the three sources to create a 
+full corpus. This corpus will be further cleaned, tokenized and used to build 
+the prediction model.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+blog.txt.sub <- data.frame(text = blog.txt.sub, source = "blog")
+news.txt.sub <- data.frame(text = news.txt.sub, source = "news")
+twitter.txt.sub <- data.frame(text = twitter.txt.sub, source = "twitter")
+
+blog.txt.sub %>% bind_rows(news.txt.sub, twitter.txt.sub) -> all.txt.sub
+
+c.all <- corpus(all.txt.sub)
+```
+Now, we can proceed with further cleaning and tokenization of the corpus. We will
+remove profanity words, puntuation, symbols, numbers and links. We will also 
+remove the stop-words as it is a common practice in language processing.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+tk1 <- tokens(c.all, what = "word", remove_punct = T, remove_symbols = T, 
+                remove_numbers = T, remove_url = T, remove_separators = T)
+
+profanity <- read_lines("bad-words.txt")
+tk1 <- tokens_remove(tk1, pattern = profanity)
+
+tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
+```
+Using the tokenized corpus we produce the bigram and trigram collections that
+that will be neccessary for the prediction model.
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+tk2 <- tokens_ngrams(tk1, n = 2)
+tk3 <- tokens_ngrams(tk1, n = 3)
+```
+### 2.3 Exploratory Data Analysis
+#### Examining the word frequency and other properties of the corpora
+The world cloud of 100 most frequent words in our corpus
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+tk1.freq <- textstat_frequency(dfm(tk1))
+tk2.freq <- textstat_frequency(dfm(tk2))
+tk3.freq <- textstat_frequency(dfm(tk3))
+
+wordcloud(tk1.freq$feature, tk1.freq$frequency, max.words=100, colors = "blue")
+```
+
+The plots of top 10 most frequent uni-, bi- and trigrams in the corpus.
+
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+as.data.frame(tk1.freq) %>% select(feature, frequency) %>% 
+        mutate(ngram = "uni") %>% 
+        slice(1:10) -> tk1.freq.to.plot
+
+as.data.frame(tk2.freq) %>% select(feature, frequency) %>% 
+        mutate(ngram = "bi") %>% 
+        slice(1:10)-> tk2.freq.to.plot
+
+as.data.frame(tk3.freq) %>% select(feature, frequency) %>% 
+        mutate(ngram = "tri") %>% 
+        slice(1:10)-> tk3.freq.to.plot
+        
+tk1.freq.to.plot %>% bind_rows(tk2.freq.to.plot, tk3.freq.to.plot) -> tk.to.plot
+tk.to.plot$ngram <- factor(tk.to.plot$ngram, levels = c("uni", "bi", "tri"))
+
+plot.freq <- ggplot(tk.to.plot, aes(x=frequency, y=reorder(feature, frequency))) + 
+        geom_point(aes(color=ngram)) + ylab("") + 
+        facet_wrap(.~ngram, ncol=1, scales = "free")
+plot.freq
+```
+
+**How many unique words do you need in a frequency sorted dictionary to cover 50% 
+of all word instances in the language? How many for 90%?**
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+sum(cumsum(tk1.freq$frequency) <= sum(tk1.freq$frequency*0.5))
+sum(cumsum(tk1.freq$frequency) <= sum(tk1.freq$frequency*0.9))
+```
+We can see that only 1010 unique words make up 50% of the entire corpus. To cover
+90% of the corpus 17841 words are needed. This shows us that less than 1% of the 
+unique words make half of the volume of the corpus.
+
+**Now we take a look at how many uni-, bi- and trigrams appear only one, two or 
+three times in the corpus.**
+```{r message=FALSE, warning=FALSE, cache=TRUE, comment=NA}
+tk1.fq.fq <- as_tibble(table(tk1.freq$frequency), .name_repair = "minimal")
+tk2.fq.fq <- as_tibble(table(tk2.freq$frequency), .name_repair = "minimal") 
+tk3.fq.fq <- as_tibble(table(tk3.freq$frequency), .name_repair = "minimal") 
+data.frame(ngram=c("unigram", "bigram", "trigram"), 
+           x1=c(tk1.fq.fq[[2]][1],tk2.fq.fq[[2]][1],tk3.fq.fq[[2]][1]),
+           x2=c(tk1.fq.fq[[2]][2],tk2.fq.fq[[2]][2],tk3.fq.fq[[2]][2]),
+           x3=c(tk1.fq.fq[[2]][3],tk2.fq.fq[[2]][3],tk3.fq.fq[[2]][3]),
+           `percent(x1)`=c(round(tk1.fq.fq[[2]][1]/length(tk1.freq$feature)*100,2),
+                          round(tk2.fq.fq[[2]][1]/length(tk2.freq$feature)*100,2),
+                          round(tk3.fq.fq[[2]][1]/length(tk3.freq$feature)*100,2)))
+```
+
+## 3. Observations
+* The amount of text provided as a starting point to build our model is fairly 
+large and causes an efficiency problem when the work is beeing done on a regular
+computer.
+* Sampling only 5% of the provided corpus improves the efficiency of working with 
+the data but may affect the accuracy of the predictions. Different starting sample
+size may need to be tested and evaluated to find the right accuracy -- efficiency 
+balance.
+* There is a vast number of different NLP packages available for R but 
+quantenda seems to be the most coherenet, complete and easy to use.
+* A relatively low number of unique words make up a large proportion of the corpus.
+* When the corpus is tokenized in bi- and trigrams majority of the tokens appear
+only once in the entire corpus.
+* The previous two facts indicate that low frequency bi- and trigrams can likely
+be removed from the dataset without affecting the accuracy of the prediction. 
+Reducing the dataset in this way will likely improve the efficiency of the 
+algorithm but it's impact on the accuracy will need to be evaluated.
+
+## 4. Plans for building the prediction algorithm
+After extensive research about the common practices in building n-gram
+prediction models and going half-way through with building a Katz's back-off 
+model with Linear Good Turing probability smoothing, I stumbled upon the paper
+published by [Brants et al.](https://aclanthology.org/D07-1090.pdf), the backoff
+model that they describe, named Stupid Backoff for its simplicity, offers a much
+simpler approach to the word prediction problem. Instead of probabilities, their
+model uses un-nomrmalized word frequencies with empiricaly set backoff weight. 
+This model is much less computation hungry and easier to implement. I will try 
+to use it for this assignment and test it's accuracy. If the results are not
+satisfactory I will go back to the classic Katz's back-off model.
+
+
+
+
+
+
+
+
