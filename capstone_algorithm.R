@@ -1,126 +1,63 @@
+#' build the prediction alogorthm and test it
+
+
 library(tidyverse)
 library(cld2) # detect language
 library(quanteda)
 library(quanteda.textplots)
 library(quanteda.textstats)
-#library(sbo)
+
 
 set.seed(666)
 
-blog <- file("Coursera-SwiftKey/final/en_US/en_US.blogs.txt")
-news <- file("Coursera-SwiftKey/final/en_US/en_US.news.txt")
-twitter <- file("Coursera-SwiftKey/final/en_US/en_US.twitter.txt")
+# load the pre-processed frequency tables
+if (!exists("tk1.freq")){
+        
+        tk1.freq <- read.csv("tk1.freq.csv")
+        tk2.freq <- read.csv("tk2.freq.csv")
+        tk3.freq <- read.csv("tk3.freq.csv")
+        tk4.freq <- read.csv("tk4.freq.csv")
+        tk5.freq <- read.csv("tk5.freq.csv")
+        
+}
+
 profanity <- read_lines("bad-words.txt")
-
-#' sample only 0.5% of the blog text file
-blog.txt <- readLines(blog)
-
-sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/5))
-blog.txt.sub <- blog.txt[sample.blog]
-
-rm(blog.txt)
-
-#' sample only 0.5% of the news text file
-news.txt <- readLines(news)
-
-sample.news <- sample(1:length(news.txt),round(length(news.txt)/5))
-
-news.txt.sub <- news.txt[sample.news]
-
-rm(news.txt)
-
-#' sample only 0.5% of the twitter text file
-twitter.txt <- readLines(twitter)
-
-sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/5))
-
-twitter.txt.sub <- twitter.txt[sample.twitter]
-
-rm(twitter.txt)
-
-#' detect the language of each line in the text file and remove the non-english 
-#' lines
-lng1 <- detect_language(blog.txt.sub) 
-lng2 <- detect_language(news.txt.sub) 
-lng3 <- detect_language(twitter.txt.sub) 
-
-#' keep only lines marked as english
-
-blog.txt.sub <- blog.txt.sub[lng1 =="en"]
-news.txt.sub <- news.txt.sub[lng2 =="en"]
-twitter.txt.sub <- twitter.txt.sub[lng3 =="en"]
-
-#' combine the subsamples of different input files into one corpus for further 
-#' analysis
-
-blog.txt.sub <- data.frame(text = blog.txt.sub, source = "blog")
-news.txt.sub <- data.frame(text = news.txt.sub, source = "news")
-twitter.txt.sub <- data.frame(text = twitter.txt.sub, source = "twitter")
-
-blog.txt.sub %>% bind_rows(news.txt.sub, twitter.txt.sub) -> all.txt.sub
-
-
-c.all <- corpus(all.txt.sub)
-
-
-#' create the corpus from the sampled text and tokenize it by words 
-tk1 <- tokens(c.all, what = "word", remove_punct = T, remove_symbols = T, 
-              remove_numbers = T, remove_url = T, remove_separators = T)
-
-#' remove profanity
-tk1 <- tokens_remove(tk1, pattern = profanity)
-
-#' remove stopwords
-
-tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
-
-#' create 2, 3, 4 and 5-ngrams
-tk2 <- tokens_ngrams(tk1, n = 2)
-tk3 <- tokens_ngrams(tk1, n = 3)
-tk4 <- tokens_ngrams(tk1, n = 4)
-tk5 <- tokens_ngrams(tk1, n = 5)
-
-#' analyzing the frequency of n-grams 
-tk1.freq <- as_tibble(textstat_frequency(dfm(tk1))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
-tk2.freq <- as_tibble(textstat_frequency(dfm(tk2))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
-tk3.freq <- as_tibble(textstat_frequency(dfm(tk3))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
-tk4.freq <- as_tibble(textstat_frequency(dfm(tk4))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
-tk5.freq <- as_tibble(textstat_frequency(dfm(tk5))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
-
-# Stupid Backoff Model
-
-
-rm(list = setdiff(ls(), c("tk1.freq","tk2.freq", "tk3.freq", "tk4.freq",
-                          "tk5.freq","profanity")))
-gc()
-
 
 next.word.prediction <- function(phrase){
         
         ## tokenize the input phrase in the same way as the corpus
-        tk.phrase <- tokens(phrase, what = "word", remove_punct = T, 
-                            remove_symbols = T, remove_numbers = T, 
-                            remove_url = T, remove_separators = T)
+        tk.phrase <- tokens(phrase, what = "word", 
+                            remove_punct = TRUE, 
+                            remove_symbols = TRUE,
+                            remove_numbers = TRUE,
+                            remove_url = TRUE, 
+                            remove_separators = TRUE)
         
-        tk.phrase <- tokens_select(tk.phrase, pattern = stopwords("en"),
-                                   selection = "remove")
+        # tk.phrase <- tokens_select(tk.phrase, pattern = stopwords("en"),
+        #                            selection = "remove")
         
         tk.phrase <- tokens_remove(tk.phrase, pattern = profanity)
-        
-        to.match <- tokens_select(tk.phrase, startpos = (length(unlist((tk.phrase)))-2), 
+
+        to.match <- tokens_select(tk.phrase, startpos = (length(unlist((tk.phrase)))-3), 
                                   endpos = length(unlist(tk.phrase)))
         
-        ## prepare the end bigram, trigram and 4-gram to use later as a query in 
-        ## frequency tables
-        tail_trigram <- paste(to.match[[1]][1], to.match[[1]][2],to.match[[1]][3],
+        ## prepare the end bigram, trigram, 4 and 5-gram to use later as a query 
+        ## in frequency tables
+        tail_4gram <- paste(to.match[[1]][1], to.match[[1]][2],to.match[[1]][3],
+                            to.match[[1]][4], sep = "_")
+        tail_trigram <- paste(to.match[[1]][2], to.match[[1]][3],to.match[[1]][4],
                               sep = "_")
-        tail_bigram <- paste(to.match[[1]][2], to.match[[1]][3], sep = "_")
-        tail_unigram <- to.match[[1]][3] 
+        tail_bigram <- paste(to.match[[1]][3], to.match[[1]][4], sep = "_")
+        tail_unigram <- to.match[[1]][4] 
+        
+        ## find all the 5-grams starting with the tail 4gram
+        tk5.freq[grep(paste0("^", tail_4gram, "_"), tk5.freq$feature),] -> obs_5grams
+        ## find the frequency of the tail bigram in the corpus
+        tk4.freq[grep(paste0("^", tail_4gram, "$"), tk4.freq$feature),2] -> tail_4gram_fq
+        ## calcualte the frequency of the observed 4-grams and put them in a tibble
+        obs_5grams %>% mutate(word = str_split_fixed(obs_5grams$feature, "_",5)[,5],
+                              S=(frequency/tail_4gram_fq$frequency)) %>% 
+                select(word, S) -> word.prediction
         
         ## find all the 4-grams starting with the tail trigram
         tk4.freq[grep(paste0("^", tail_trigram, "_"), tk4.freq$feature),] -> obs_4grams
@@ -128,8 +65,8 @@ next.word.prediction <- function(phrase){
         tk3.freq[grep(paste0("^", tail_trigram, "$"), tk3.freq$feature),2] -> tail_trigram_fq
         ## calcualte the frequency of the observed 4-grams and put them in a tibble
         obs_4grams %>% mutate(word = str_split_fixed(obs_4grams$feature, "_",4)[,4],
-                                S=(frequency/tail_trigram_fq$frequency)) %>% 
-                select(word, S) -> word.prediction
+                                S=(0.4*(frequency/tail_trigram_fq$frequency))) %>% 
+                select(word, S) %>% bind_rows(word.prediction) -> word.prediction
         
         ## find all the trigrams starting with the tail bigram
         tk3.freq[grep(paste0("^", tail_bigram, "_"), tk3.freq$feature),] -> obs_trigrams
@@ -138,7 +75,7 @@ next.word.prediction <- function(phrase){
         
         ## calcualte the frequency of the observed trigrams and put them in a tibble
         obs_trigrams %>% mutate(word = str_split_fixed(obs_trigrams$feature, "_",3)[,3],
-                                S=(0.4*(frequency/tail_bigram_fq$frequency))) %>% 
+                                S=(0.4*0.4*(frequency/tail_bigram_fq$frequency))) %>% 
                 select(word, S) %>% bind_rows(word.prediction) -> word.prediction
         
         ## find all the bigrams starting with the tail unigram
@@ -149,18 +86,18 @@ next.word.prediction <- function(phrase){
         
         ## calcualte the frequency of the observed bigrams and add them to the tibble
         obs_bigrams %>% mutate(word = str_split_fixed(obs_bigrams$feature, "_",2)[,2],
-                               S=(0.4*0.4*(frequency/tail_unigram_fq$frequency))) %>% 
+                               S=(0.4*0.4*0.4*(frequency/tail_unigram_fq$frequency))) %>% 
                 select(word, S) %>% bind_rows(word.prediction) -> word.prediction
         
         ## look at the most frequent unigrams and calculate their frequency with the 
         ## backoff rate, add them to the tibble
         tk1.freq %>% slice(1:5) %>% mutate(word = feature, 
-                                           S=(0.4*0.4*0.4*(frequency/sum(tk1.freq$frequency)))) %>% 
+                                           S=(0.4*0.4*0.4*0.4*(frequency/sum(tk1.freq$frequency)))) %>% 
                 select(word, S) %>% bind_rows(word.prediction) -> word.prediction
         ## sort the words that could potentially complete the phrase by the frequency
         ## and display only the top 5 candidates
         word.prediction %>% arrange(desc(S)) %>% distinct(word, .keep_all = T) %>% 
-                slice(1:5) -> word.prediction        
+                slice(1:10) -> word.prediction        
         
         return(word.prediction)
 }
@@ -194,44 +131,6 @@ next.word.prediction(q9)
 
 q10 <- "If this isn't the cutest thing you've ever seen, then you must be"
 next.word.prediction(q10)
-
-tk.phrase <- tokens(q6, what = "word", remove_punct = T, 
-                    remove_symbols = T, remove_numbers = T, 
-                    remove_url = T, remove_separators = T)
-
-tk.phrase <- tokens_select(tk.phrase, pattern = stopwords("en"),
-                          selection = "remove")
-
-tk.phrase <- tokens_remove(tk.phrase, pattern = profanity)
-   
-to.match <- tokens_select(tk.phrase, startpos = (length(unlist((tk.phrase)))-1), 
-                                     endpos = length(unlist(tk.phrase)))
-tail_bigram <- paste(to.match[[1]][1], to.match[[1]][2], sep = "_")
-tail_unigram <- to.match[[1]][2]      
-
-tk3.freq[grep(paste0("^", tail_bigram, "_"), tk3.freq$feature),] -> obs_trigrams
-tk2.freq[grep(paste0("^", tail_bigram, "$"), tk2.freq$feature),2] -> tail_bigram_fq
-
-obs_trigrams %>% mutate(word = str_split_fixed(obs_trigrams$feature, "_",3)[,3],
-                        S=(frequency/tail_bigram_fq$frequency)) %>% 
-                select(word, S) -> word.prediction
-
-tk2.freq[grep(paste0("^", tail_unigram, "_"), tk2.freq$feature),] -> obs_bigrams
-tk1.freq[grep(paste0("^", tail_unigram, "$"), 
-              tk1.freq$feature, useBytes = T),2] -> tail_unigram_fq
-
-
-obs_bigrams %>% mutate(word = str_split_fixed(obs_bigrams$feature, "_",2)[,2],
-                        S=(0.4*(frequency/tail_unigram_fq$frequency))) %>% 
-        select(word, S) %>% bind_rows(word.prediction) -> word.prediction
-
-tk1.freq %>% slice(1:5) %>% mutate(word = feature, 
-                                    S=(0.4*0.4*(frequency/sum(tk1.freq$frequency)))) %>% 
-        select(word, S) %>% bind_rows(word.prediction) -> word.prediction
-
-word.prediction %>% arrange(desc(S)) %>% distinct(word, .keep_all = T) %>% 
-        slice(1:5) -> word.prediction
-
 
 
 
