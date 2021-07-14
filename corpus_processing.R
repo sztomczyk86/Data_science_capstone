@@ -17,7 +17,7 @@ profanity <- read_lines("bad-words.txt")
 #' sample only 0.5% of the blog text file
 blog.txt <- readLines(blog)
 
-sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/3))
+sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/300))
 blog.txt.sub <- blog.txt[sample.blog]
 
 rm(blog.txt)
@@ -25,7 +25,7 @@ rm(blog.txt)
 #' sample only 0.5% of the news text file
 news.txt <- readLines(news)
 
-sample.news <- sample(1:length(news.txt),round(length(news.txt)/3))
+sample.news <- sample(1:length(news.txt),round(length(news.txt)/300))
 
 news.txt.sub <- news.txt[sample.news]
 
@@ -34,7 +34,7 @@ rm(news.txt)
 #' sample only 0.5% of the twitter text file
 twitter.txt <- readLines(twitter)
 
-sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/3))
+sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/300))
 
 twitter.txt.sub <- twitter.txt[sample.twitter]
 
@@ -121,4 +121,4 @@ gc()
 # write.csv(tk4.freq, "tk4.freq.csv", row.names = F)
 # write.csv(tk5.freq, "tk5.freq.csv", row.names = F)
 
-rm(list=lc())
+rm(list=ls())
