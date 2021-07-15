@@ -6,7 +6,7 @@ library(cld2) # detect language
 library(quanteda)
 library(quanteda.textplots)
 library(quanteda.textstats)
-
+library(glue)
 
 set.seed(666)
 
@@ -86,37 +86,54 @@ tk1.test <- tokens(c.test, what = "word", remove_punct = TRUE,
 
 rm(list=setdiff(ls(),"tk1.test"))
 
+tk1.test <- tk1.test[sapply(tk1.test, length) > 1]
 
 
-sentences.TC <- vector()
-correct.word <- vector()
 
-
+set.seed(666)
 for (i in 1:length(tk1.test)){
         
+        if (i == 1){
+                
+                sentences.TC <- data.frame(sentence = vector(),
+                                           correct.word = vector(),
+                                           prediction.w1 = vector(),
+                                           prediction.w2 = vector(),
+                                           prediction.w3 = vector())
+        }
+        
         sent.lght <- length(tk1.test[[i]])
-        end.pos <- sample((1:(length(tk1.test[[i]]))-1),1)
+        end.pos <- sample(1:(length(tk1.test[[i]])-1),1)
         
-        sentences.TC[i] <- as.character(tokens_select(tk1.test[i], 
+        sentences.TC[i,1] <- glue_collapse(as.character(tokens_select(tk1.test[i], 
                                          startpos = 1, 
-                                         endpos = end.pos))
+                                         endpos = end.pos)), sep = " ")
         
-        correct.word[i] <- tk1.test[[i]][end.pos+1]
+        sentences.TC[i,2] <- tk1.test[[i]][end.pos+1]
         
         
 }
 
+source("capstone_algorithm.R")
+
+for (i in 1:nrow(sentences.TC)){
+        
+        
+        sentences.TC [i,3:5] <- next.word.prediction(sentences.TC[i,1])[1:3,1]
+        
+        
+}
+
+sentences.TC %>% mutate(correct.t1 = (correct.word == prediction.w1),
+                        correct.t2 = (correct.word == prediction.w2),
+                        correct.t3 = (correct.word == prediction.w3)) %>%
+        mutate(correct.prediction = (correct.t1==TRUE|
+                                             correct.t2==TRUE|
+                                             correct.t3==TRUE)) -> sentences.TC
+
+sum(sentences.TC$correct.prediction/nrow(sentences.TC)*100)
 
 
-sent.lght <- length(tk1.test[[1]])
-end.pos <- sample((1:(length(tk1.test[[1]]))-1),1)
-
-
-sentences.TC[1] <- as.character(tokens_select(tk1.test[1], 
-                                              startpos = 1, 
-                                              endpos = end.pos))
-
-correct.word[1] <- tk1.test[[1]][end.pos+1]
 
 
 
