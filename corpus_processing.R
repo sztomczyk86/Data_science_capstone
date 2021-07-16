@@ -17,7 +17,7 @@ profanity <- read_lines("bad-words.txt")
 #' sample only 0.5% of the blog text file
 blog.txt <- readLines(blog)
 
-sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/300))
+sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/3))
 blog.txt.sub <- blog.txt[sample.blog]
 
 rm(blog.txt)
@@ -25,7 +25,7 @@ rm(blog.txt)
 #' sample only 0.5% of the news text file
 news.txt <- readLines(news)
 
-sample.news <- sample(1:length(news.txt),round(length(news.txt)/300))
+sample.news <- sample(1:length(news.txt),round(length(news.txt)/3))
 
 news.txt.sub <- news.txt[sample.news]
 
@@ -34,7 +34,7 @@ rm(news.txt)
 #' sample only 0.5% of the twitter text file
 twitter.txt <- readLines(twitter)
 
-sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/300))
+sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/3))
 
 twitter.txt.sub <- twitter.txt[sample.twitter]
 
@@ -80,7 +80,7 @@ tk1 <- tokens_remove(tk1, pattern = profanity)
 
 #' remove stopwords
 
-# tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
+tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
 
 #' create 2, 3, 4 and 5-ngrams and analyze their frequency
 tk1.freq <- as_tibble(textstat_frequency(dfm(tk1))) %>% 
