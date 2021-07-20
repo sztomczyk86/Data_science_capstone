@@ -19,7 +19,7 @@ profanity <- read_lines("bad-words.txt")
 #' taken to build the model
 blog.txt <- readLines(blog)
 
-sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/3))
+sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)*0.75))
 blog.txt.sub <- blog.txt[-sample.blog]
 sample.blog <- sample(1:length(blog.txt.sub),1000)
 blog.txt.sub <- blog.txt.sub[sample.blog]
@@ -30,7 +30,7 @@ rm(blog.txt)
 #' taken to build the model
 news.txt <- readLines(news)
 
-sample.news <- sample(1:length(news.txt),round(length(news.txt)/3))
+sample.news <- sample(1:length(news.txt),round(length(news.txt)*0.75))
 
 news.txt.sub <- news.txt[-sample.news]
 
@@ -42,7 +42,7 @@ rm(news.txt)
 #' taken to build the model
 twitter.txt <- readLines(twitter)
 
-sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/3))
+sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)*0.75))
 
 twitter.txt.sub <- twitter.txt[-sample.twitter]
 
@@ -92,7 +92,7 @@ source("capstone_algorithm.R")
 
 set.seed(666)
 
-for (n in 10:10){
+for (n in 1:1){
         if (n == 1){ 
                 
                 accuracy.measure <- tibble(trial=c(1:10), 
@@ -145,7 +145,10 @@ for (n in 10:10){
         
 }
 
-accuracy.measure[9,2] <- sum(sentences.TC$correct.t1/nrow(sentences.TC)*100)
-accuracy.measure[9,3] <- sum(sentences.TC$correct.prediction.t3/nrow(sentences.TC)*100)
+#accuracy.measure[9,2] <- sum(sentences.TC$correct.t1/nrow(sentences.TC)*100)
+#accuracy.measure[9,3] <- sum(sentences.TC$correct.prediction.t3/nrow(sentences.TC)*100)
 
-#write.csv(accuracy.measure, "0.33_w_stop_words.csv", row.names = F)
+#write.csv(accuracy.measure, "0.33_without_stop_words.csv", row.names = F)
+#write.csv(accuracy.measure, "0.33_with_stop_words.csv", row.names = F)
+
+

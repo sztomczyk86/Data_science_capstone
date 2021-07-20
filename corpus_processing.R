@@ -17,7 +17,7 @@ profanity <- read_lines("bad-words.txt")
 #' sample only 0.5% of the blog text file
 blog.txt <- readLines(blog)
 
-sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)/3))
+sample.blog <- sample(1:length(blog.txt),round(length(blog.txt)*0.7))
 blog.txt.sub <- blog.txt[sample.blog]
 
 rm(blog.txt)
@@ -25,7 +25,7 @@ rm(blog.txt)
 #' sample only 0.5% of the news text file
 news.txt <- readLines(news)
 
-sample.news <- sample(1:length(news.txt),round(length(news.txt)/3))
+sample.news <- sample(1:length(news.txt),round(length(news.txt)*0.7))
 
 news.txt.sub <- news.txt[sample.news]
 
@@ -34,7 +34,7 @@ rm(news.txt)
 #' sample only 0.5% of the twitter text file
 twitter.txt <- readLines(twitter)
 
-sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)/3))
+sample.twitter <- sample(1:length(twitter.txt),round(length(twitter.txt)*0.7))
 
 twitter.txt.sub <- twitter.txt[sample.twitter]
 
@@ -80,32 +80,45 @@ tk1 <- tokens_remove(tk1, pattern = profanity)
 
 #' remove stopwords
 
-tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
+#tk1 <- tokens_select(tk1, pattern = stopwords("en"), selection = "remove")
 
 #' create 2, 3, 4 and 5-ngrams and analyze their frequency
-tk1.freq <- as_tibble(textstat_frequency(dfm(tk1))) %>% 
+
+tk1.dfm <- dfm(tk1)
+tk1.freq <- as_tibble(textstat_frequency(tk1.dfm)) %>% 
         select(feature, frequency) %>% filter(frequency > 4)
+
+rm(tk1.dfm)
 
 tk2 <- tokens_ngrams(tk1, n = 2)
-tk2.freq <- as_tibble(textstat_frequency(dfm(tk2))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
+tk2.dfm <- dfm(tk2)
 rm(tk2)
 
-tk3 <- tokens_ngrams(tk1, n = 3)
-tk3.freq <- as_tibble(textstat_frequency(dfm(tk3))) %>% 
+tk2.freq <- as_tibble(textstat_frequency(tk2.dfm)) %>% 
         select(feature, frequency) %>% filter(frequency > 4)
+rm(tk2.dfm)
+
+tk3 <- tokens_ngrams(tk1, n = 3)
+tk3.dfm <- dfm(tk3)
 rm(tk3)
+tk3.freq <- as_tibble(textstat_frequency(tk3.dfm)) %>% 
+        select(feature, frequency) %>% filter(frequency > 4)
+rm(tk3.dfm)
 
 tk4 <- tokens_ngrams(tk1, n = 4)
-tk4.freq <- as_tibble(textstat_frequency(dfm(tk4))) %>% 
-        select(feature, frequency) %>% filter(frequency > 4)
+tk4.dfm <- dfm(tk4)
 rm(tk4)
+tk4.freq <- as_tibble(textstat_frequency(tk4.dfm)) %>% 
+        select(feature, frequency) %>% filter(frequency > 4)
+rm(tk4.dfm)
 
 tk5 <- tokens_ngrams(tk1, n = 5)
-tk5.freq <- as_tibble(textstat_frequency(dfm(tk5))) %>% 
+tk5.dfm <- dfm(tk5)
+rm(tk5)
+tk5.freq <- as_tibble(textstat_frequency(tk5.dfm)) %>% 
         select(feature, frequency) %>% filter(frequency > 4)
 rm(tk1)
-rm(tk5)
+rm(tk5.dfm)
 
 
 # Stupid Backoff Model

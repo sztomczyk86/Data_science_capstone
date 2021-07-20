@@ -114,34 +114,36 @@ next.word.prediction <- function(phrase){
         return(word.prediction)
 }
 
-# q1 <- "The guy in front of me just bought a pound of bacon, a bouquet, and a case of"
-# next.word.prediction(q1)
-# 
-# q2 <- "You're the reason why I smile everyday. Can you follow me please? It would mean the"
-# next.word.prediction(q2)
-# 
-# q3 <- "Hey sunshine, can you follow me and make me the"
-# next.word.prediction(q3)
-# 
-# q4 <- "Very early observations on the Bills game: Offense still struggling but the"
-# next.word.prediction(q4)
-# 
-# q5 <- "Go on a romantic date at the"
-# next.word.prediction(q5)
-# 
-# q6 <- "Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my"
-# next.word.prediction(q6)
-# 
-# q7 <- "Ohhhhh #PointBreak is on tomorrow. Love that film and haven't seen it in quite some"
-# next.word.prediction(q7)
-# 
-# q8 <- "After the ice bucket challenge Louis will push his long wet hair out of his eyes with his little"
-# next.word.prediction(q8)
-# 
-# q9 <- "Be grateful for the good times and keep the faith during the"
-# next.word.prediction(q9)
-# 
-# q10 <- "If this isn't the cutest thing you've ever seen, then you must be"
-# next.word.prediction(q10)
+q1 <- "The guy in front of me just bought a pound of bacon, a bouquet, and a case of"
+next.word.prediction(q1)
 
+q2 <- "You're the reason why I smile everyday. Can you follow me please? It would mean the"
+next.word.prediction(q2)
+
+q3 <- "Hey sunshine, can you follow me and make me the"
+next.word.prediction(q3)
+
+q4 <- "Very early observations on the Bills game: Offense still struggling but the"
+next.word.prediction(q4)
+
+q5 <- "Go on a romantic date at the"
+next.word.prediction(q5)
+
+q6 <- "Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my"
+next.word.prediction(q6)
+
+q7 <- "Ohhhhh #PointBreak is on tomorrow. Love that film and haven't seen it in quite some"
+next.word.prediction(q7)
+
+q8 <- "After the ice bucket challenge Louis will push his long wet hair out of his eyes with his little"
+next.word.prediction(q8)
+
+q9 <- "Be grateful for the good times and keep the faith during the"
+next.word.prediction(q9)
+
+q10 <- "If this isn't the cutest thing you've ever seen, then you must be"
+next.word.prediction(q10)
+
+bla <- "I like how the same people are in almost all of Adam Sandler's"
+next.word.prediction(bla)
 
