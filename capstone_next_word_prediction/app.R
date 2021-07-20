@@ -25,7 +25,7 @@ ui <- fluidPage(
     sidebarLayout(
         verticalLayout(
             
-            textInput("sentence.TC", "Write a sentence to complete:",
+            textInput("sentence.TC", "Write a sentence to be completed:",
                       width = "90%", placeholder = "Type something here and press 'Predict'"),
             
             actionButton("click.me", "Predict", width = "20%")

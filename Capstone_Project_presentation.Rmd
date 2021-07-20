@@ -1,0 +1,68 @@
+---
+title: "Predict Next Word - Capstone Project"
+author: "Szymon Tomczyk"
+date: "7/20/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+* This is a presentation of my "Next Word Prediction" application developed as a
+Capstone Project of the Data Science Specialization offered by the Johns 
+Hopkins University. More information about the input data, data cleaning and
+exploratory analysis can be found in this [report](https://rpubs.com/sztomczyk/789460).
+
+* I will present the basic principles of the algorithm behind the predictions,
+discuss its performance and describe the basic features of the Shiny App interface.
+
+
+
+## How the algorithm works
+
+For the purpose of simplicity and efficiency I build my application based on the 
+Stupid Backoff algorithm described by [Brants et al.](https://aclanthology.org/D07-1090.pdf)
+Their model uses un-normalized word frequencies with empirical set backoff weight.
+
+In the Stupid Backoff algorithm the frequency of the following word - S is calculated 
+according to the following formula with the back of weight - α set to 0.4 (
+empirically defined by the authors of the original paper).
+
+![](./SB_quations.png){width=50%}
+
+
+## Testing the accuracy and perfomrance
+<font size="4"> To test the accuracy of my prediction model, I wrote a custom function that was 
+randomly sampling the portion of the corpus that was not used to make the model. 
+Next, the sampled sentences were cut after a random word and passed to the prediction
+algorithm. Then, the 3 most likely words were compared with the correct one to calculate
+the accuracy of the algorithm. 
+
+In the testing phase I sampled a third of the provided corpus and I evaluated the 
+accuracy of two major approaches: with and without stop-words.
+
+The model where the stop-words were removed was performing very poorly - it had 
+about 3% of correct prediction in the first 3 words. When stop-words were included
+the model oscillated at about 25% of correct prediction in the first 3 words.
+
+Later, on I tried to increase the percentage of the corpus included in building the model.
+I managed to go up to 75% of the coverage of the corpus. Interestingly, the 
+improvement of the accuracy of the prediction was limited to few percent with 
+huge loss of speed.
+
+For the final app that is presented here I used a third of the corpus with stop-words.</font> 
+
+## Presentation of the App
+For the finished app I decided to use a very simple interface with the reactive feature
+of the Shiny App. 
+
+![](./app_overview.png){width=80%}
+
+When the user types something in the text box and presses "Predict". The algorithm 
+will suggest 5 most likely words that could follow the input phrase.
+
+## Summary
+
